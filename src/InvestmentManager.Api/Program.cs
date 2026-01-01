@@ -29,5 +29,22 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        // O comando abaixo faz a mesma coisa que 'dotnet ef database update'
+        // mas executado automaticamente pelo código
+        context.Database.Migrate(); 
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Erro ao criar o banco de dados: {ex.Message}");
+    }
+}
+// --------------------------------
+
 app.Run();
 
