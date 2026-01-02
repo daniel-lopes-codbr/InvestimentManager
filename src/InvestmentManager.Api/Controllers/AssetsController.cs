@@ -1,5 +1,6 @@
 using InvestmentManager.Api.Data;
 using InvestmentManager.Api.Entities;
+using InvestmentManager.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,11 +34,18 @@ namespace InvestmentManager.Api.Controllers
                 return NotFound();
             }
 
+            var response = new AssetResponse
+            {
+                Id = asset.Id,
+                Symbol = asset.Symbol,
+                Name = asset.Name
+            };
+
             return Ok(asset);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateAsset([FromBody] Asset asset)
+        public async Task<IActionResult> CreateAsset([FromBody] CreateAssetRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -45,18 +53,31 @@ namespace InvestmentManager.Api.Controllers
             }
 
             var assetExists = await _context.Assets
-                .AnyAsync(a => a.Symbol.ToUpper() == asset.Symbol.ToUpper());
+                .AnyAsync(a => a.Symbol.ToUpper() == request.Symbol.ToUpper());
 
             if (assetExists)
             {
-                return Conflict(new {message = $"O ativo '{asset.Symbol}' já esta cadastrado"});
+                return Conflict(new {message = $"O ativo '{request.Symbol}' já esta cadastrado"});
             }
 
-            _context.Assets.Add(asset);
+            var newAsset = new Asset
+            {
+                Symbol = request.Symbol.ToUpper(),
+                Name = request.Name
+            };
+
+            _context.Assets.Add(newAsset);
 
            await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAssetById), new {id = asset.Id}, asset);
+           var response = new AssetResponse
+           {
+               Id = newAsset.Id,
+               Symbol = newAsset.Symbol,
+               Name = newAsset.Name
+           };
+
+            return CreatedAtAction(nameof(GetAssetById), new {id = response.Id}, response);
         }
     }
 }
